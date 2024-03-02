@@ -89,10 +89,6 @@ app.delete('/todos/:id', (req, res) => {
     })
 })
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname,"index.html"));
-})
-
 // for all other routes, return 404
 app.use((req, res, next) => {
     res.status(404).send("Route does not exist!");
