@@ -1,11 +1,10 @@
 const jwt = require('jsonwebtoken');
-const SECRET = 's3cR3t';
 
 const authenticateJwt = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
         const token = authHeader.split(' ')[1];
-        jwt.verify(token, SECRET, (err, user) => {
+        jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
             if (err) {
                 res.status(403)
             } else {
@@ -19,6 +18,5 @@ const authenticateJwt = (req, res, next) => {
 }
 
 module.exports = {
-    authenticateJwt,
-    SECRET
+    authenticateJwt
 }

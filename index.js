@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { User, Todo } = require('./db');
@@ -6,12 +7,12 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
 const { error } = require('console');
-const { authenticateJwt, SECRET } = require('./middleware/auth');
+const { authenticateJwt } = require('./middleware/auth');
 
 
 const app = express();
 
-mongoose.connect('mongodb+srv://omzaiswal:IrQVS52bEbbQJrzW@cluster0.f67ustj.mongodb.net/', { dbName: "todo-data" })
+mongoose.connect( process.env.DB_URL, { dbName: process.env.DN_NAME })
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -24,7 +25,7 @@ app.post('/signup', async (req,res) => {
     } else {
         const newUser = new User({ username, password});
         await newUser.save();
-        const token = jwt.sign({id: newUser._id}, SECRET, {expiresIn:'2h'})
+        const token = jwt.sign({id: newUser._id}, process.env.SECRET_KEY, {expiresIn:'2h'})
         res.json({message: "User created successfully", token})
     }
 })
@@ -33,7 +34,7 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.headers;
     const user = await User.findOne({ username, password });
     if (user) {
-        const token = jwt.sign({id: newUser._id}, SECRET , {expiresIn:'2h'})
+        const token = jwt.sign({id: newUser._id}, process.env.SECRET_KEY , {expiresIn:'2h'})
         res.json({message: "Logged in successfully", token})
     } else {
         res.status(401).json({message: "Invalid username or password"});
