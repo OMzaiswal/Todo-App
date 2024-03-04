@@ -12,7 +12,7 @@ const { authenticateJwt } = require('./middleware/auth');
 
 const app = express();
 
-mongoose.connect( process.env.DB_URL, { dbName: process.env.DN_NAME })
+mongoose.connect( process.env.DB_URL, { dbName: process.env.DB_NAME })
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -34,15 +34,15 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.headers;
     const user = await User.findOne({ username, password });
     if (user) {
-        const token = jwt.sign({id: newUser._id}, process.env.SECRET_KEY , {expiresIn:'2h'})
+        const token = jwt.sign({id: user._id}, process.env.SECRET_KEY , {expiresIn:'2h'})
         res.json({message: "Logged in successfully", token})
     } else {
         res.status(401).json({message: "Invalid username or password"});
     }
 })
 
-app.get('/me', authenticateJwt, (req, res) => {
-    const user = User.findById(req.userId);
+app.get('/me', authenticateJwt, async (req, res) => {
+    const user = await User.findById(req.userId);
     if (user) {
         res.json({ username: user.username});
     } else {
@@ -51,82 +51,52 @@ app.get('/me', authenticateJwt, (req, res) => {
 
 })
 
-app.get('/todos',(req, res) => {
-    fs.readFile('txt.json','utf-8',(err, data) => {
-        if (err) throw error;
-        res.json(JSON.parse(data));
-    })
+app.get('/todos', authenticateJwt, async (req, res) => {
+    const todos = await Todo.find({ userId: req.userId })
+    if (todos) {
+        res.json(todos)
+    } else {
+        res.status(500).json({error: 'Failed to retrieve todos'})
+    }
 })
 
-app.get('/todos/:id', (req, res) => {
-    fs.readFile('txt.json', 'utf-8', (err, data) => {
-        if (err) {
-            res.send("todo not found");
-        } else {
-            const Todos = JSON.parse(data);
-            const todo = Todos.find(t => t.id === parseInt(req.params.id));
-
-            if (todo) {
-                res.json(todo);
-            } else {
-                res.status(404).send("Todo not found");
-            }
-        }
-    })
-    
+app.get('/todos/:id', authenticateJwt, async (req, res) => {
+    const todoId = req.params.id;
+    const userId = req.userId;
+    const todo = await Todo.findOne({ _id: todoId, userId });
+    if (todo) {
+        res.json(todo)
+    } else {
+        res.status(404);
+    }
 })
 
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticateJwt, async (req, res) => {
     const newTodo = {
-        id: Math.floor(Math.random()*100000),
         title: req.body.title,
-        desc: req.body.desc
+        description: req.body.description,
+        userId: req.userId,
     };
-    fs.readFile('txt.json', 'utf-8', (err, data) => {
-        if(err) throw error;
-        const Todos = JSON.parse(data);
-        Todos.push(newTodo);
-        fs.writeFile('txt.json',JSON.stringify(Todos), (err) => {
-            if (err) throw error;
-            res.status(201).json(newTodo);
-        })
-    })
+    const todo = new Todo(newTodo);
+    await todo.save();
+    res.json({message: "New todo added successfully"});
 });
 
-app.put('/todos/:id', (req, res) => {
-    fs.readFile('txt.json', 'utf-8', (err, data) => {
-        if(err) throw error;
-        const Todos = JSON.parse(data);
-        const todoIndex = Todos.findIndex(t => t.id === parseInt(req.params.id));
-        if (todoIndex === -1) {
-            res.status(404).send("Record with such id is not found");
-        } else {
-            Todos[todoIndex].title = req.body.title;
-            Todos[todoIndex].desc = req.body.desc;
-        }
-        fs.writeFile('txt.json', JSON.stringify(Todos), (err) => {
-            if (err) throw error;
-            res.json(Todos[todoIndex]);
-        })
-    })
-   
-})
+// app.put('/todos/:id', authenticateJwt, async (req, res) => {
+//    const todoId = req.params.id;
+//    const userId = req.userId;
+//    const todo = Todo.findByIdAndUpdate({ _id: todoId, userId }, {}, {new: true})
+// })
 
-app.delete('/todos/:id', (req, res) => {
-    fs.readFile('txt.json', 'utf-8', (err, data) => {
-        if(err) throw error;
-        const Todos = JSON.parse(data);
-        const todoIndex = Todos.findIndex(t => t.id === parseInt(req.params.id));
-        if (todoIndex === -1) {
-            res.status(404).send("The todo you want to delete, doesn't even exist");
-        } else {
-            Todos.splice(todoIndex, 1);
-        }
-        fs.writeFile('txt.json', JSON.stringify(Todos), (err) => {
-            if (err) throw error;
-            res.status(200).send("Todo deleted successfully!")
-        })
-    })
+app.delete('/todos/:id', async (req, res) => {
+    const todoId = req.params.id;
+    const userId = req.userId;
+    const deletedTodo = await Todo.findOneAndDelete({ _id: todoId, userId })
+    if (deletedTodo) {
+        res.json(deletedTodo);
+    } else {
+        res.status(405);
+    }
 })
 
 // for all other routes, return 404

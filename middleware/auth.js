@@ -8,7 +8,7 @@ const authenticateJwt = (req, res, next) => {
             if (err) {
                 res.status(403)
             } else {
-                res.userId = user.id;
+                req.userId = user.id;
                 next();
             }
         })
