@@ -88,7 +88,7 @@ app.post('/todos', authenticateJwt, async (req, res) => {
 //    const todo = Todo.findByIdAndUpdate({ _id: todoId, userId }, {}, {new: true})
 // })
 
-app.delete('/todos/:id', async (req, res) => {
+app.delete('/todos/:id', authenticateJwt, async (req, res) => {
     const todoId = req.params.id;
     const userId = req.userId;
     const deletedTodo = await Todo.findOneAndDelete({ _id: todoId, userId })
