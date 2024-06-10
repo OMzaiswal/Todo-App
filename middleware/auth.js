@@ -6,7 +6,7 @@ const authenticateJwt = (req, res, next) => {
         const token = authHeader.split(' ')[1];
         jwt.verify(token, process.env.SECRET_KEY, (err, user) => {
             if (err) {
-                res.status(403)
+                res.json({message: "jwt authentiaction failed"})
             } else {
                 req.userId = user.id;
                 next();

@@ -21,7 +21,7 @@ app.post('/signup', async (req,res) => {
     const { username, password } = req.headers;
     const user = await User.findOne({username});
     if (user) {
-        res.status(401).json({message: "User already exist!"})
+        res.json({message: "User already exist!"})
     } else {
         const newUser = new User({ username, password});
         await newUser.save();
@@ -37,7 +37,7 @@ app.post('/login', async (req, res) => {
         const token = jwt.sign({id: user._id}, process.env.SECRET_KEY , {expiresIn:'2h'})
         res.json({message: "Logged in successfully", token})
     } else {
-        res.status(401).json({message: "Invalid username or password"});
+        res.json({message: "Invalid username or password"});
     }
 })
 
@@ -46,7 +46,7 @@ app.get('/me', authenticateJwt, async (req, res) => {
     if (user) {
         res.json({ username: user.username});
     } else {
-        res.status(403).json({ message: "User not logged in"});
+        res.json({ message: "User not logged in"});
     }
 
 })
@@ -56,7 +56,7 @@ app.get('/todos', authenticateJwt, async (req, res) => {
     if (todos) {
         res.json(todos)
     } else {
-        res.status(500).json({error: 'Failed to retrieve todos'})
+        res.json({error: 'Failed to retrieve todos'})
     }
 })
 
