@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const { error } = require('console');
 const { authenticateJwt } = require('./middleware/auth');
+const { z } = require('zod');
 
 
 const app = express();
@@ -17,8 +18,17 @@ mongoose.connect( process.env.DB_URL, { dbName: process.env.DB_NAME })
 app.use(cors());
 app.use(bodyParser.json());
 
+let signupProps = z.object({
+    username: z.string().min(4),
+    password: z.string().min(4)
+})
+
 app.post('/signup', async (req,res) => {
-    const { username, password } = req.headers;
+    const parsedDetails = signupProps.safeParse(req.headers)
+    if (!parsedDetails.success){
+        return res.json({message: parsedDetails.error})
+    }
+    const { username, password } = parsedDetails.data;
     const user = await User.findOne({username});
     if (user) {
         res.json({message: "User already exist!"})
@@ -31,7 +41,11 @@ app.post('/signup', async (req,res) => {
 })
 
 app.post('/login', async (req, res) => {
-    const { username, password } = req.headers;
+    const parsedDetails = signupProps.safeParse(req.headers)
+    if (!parsedDetails.success){
+        return res.json({message: parsedDetails.error})
+    }
+    const { username, password } = parsedDetails.data;
     const user = await User.findOne({ username, password });
     if (user) {
         const token = jwt.sign({id: user._id}, process.env.SECRET_KEY , {expiresIn:'2h'})
