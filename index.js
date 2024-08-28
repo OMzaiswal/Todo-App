@@ -93,7 +93,7 @@ app.post('/todos', authenticateJwt, async (req, res) => {
     };
     const todo = new Todo(newTodo);
     await todo.save();
-    res.json({message: "New todo added successfully", todo});
+    res.json({message: "New todo added successfully", todo:todo});
 });
 
 // app.put('/todos/:id', authenticateJwt, async (req, res) => {
